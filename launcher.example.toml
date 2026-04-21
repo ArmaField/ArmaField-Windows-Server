@@ -1,0 +1,48 @@
+# =============================================================================
+# ArmaField Windows Server - launcher configuration
+# Copy to launcher.toml and edit. See README.md for the full field reference.
+# =============================================================================
+
+[network]
+# Public IPv4 address players see in the server browser. Leave empty for
+# LAN/local only. Empty value leaves config.json's publicAddress untouched.
+public_address = ""
+
+# UDP ports. Must match config.json and be open in Windows Firewall.
+game_port = 2001
+a2s_port  = 17777
+rcon_port = 19999
+
+[arma]
+# Raw startup flags for ArmaReforgerServer.exe.
+# Full list: https://community.bistudio.com/wiki/Arma_Reforger:Startup_Parameters
+params = "-maxFPS 120 -backendlog -nothrow"
+
+[steamcmd]
+# How often (minutes) to re-run `steamcmd validate` before launching.
+# 0 = every launch. Positive = throttled via state/steamcmd.marker.
+check_interval_minutes = 60
+
+# Skip SteamCMD entirely (for maintenance / debugging).
+skip_install = false
+
+# Arma Reforger dedicated-server AppID. Change only for beta branches.
+app_id = "1874900"
+
+[firewall]
+# Prefix for the three rule names: "<prefix> GAME" / "<prefix> A2S" / "<prefix> RCON".
+rule_prefix = "ArmaField Server"
+
+# If true, `run` / service mode adds firewall rules on start and removes them
+# on graceful shutdown. Requires admin (console mode) or LocalSystem (service).
+# Default: user manages firewall explicitly via `armafield-server firewall add/remove`.
+auto_manage = false
+
+[service]
+# Windows Service identity. Used by `armafield-server service install`.
+name         = "ArmaFieldServer"
+display_name = "ArmaField Reforger Server"
+description  = "Runs the Arma Reforger dedicated server with ArmaField MapSeeding rotation and auto-updates."
+
+# "auto" | "manual" | "disabled"
+start_type = "auto"

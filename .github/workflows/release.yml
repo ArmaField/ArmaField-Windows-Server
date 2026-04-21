@@ -1,0 +1,76 @@
+name: Release
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Read version from Cargo.toml
+        id: ver
+        shell: pwsh
+        run: |
+          $meta = cargo metadata --format-version=1 --no-deps | ConvertFrom-Json
+          $pkg = $meta.packages | Where-Object { $_.name -eq "armafield-server" }
+          if (-not $pkg) {
+            Write-Error "armafield-server package not found in cargo metadata"
+            exit 1
+          }
+          $version = $pkg.version
+          Write-Host "Package version: $version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version"    >> $env:GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: tag_check
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.ver.outputs.tag }}"
+          $exists = git tag -l $tag
+          if ($exists) {
+            Write-Host "Tag $tag already exists - nothing to release."
+            "exists=true"  >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Tag $tag does not exist - will build and release."
+            "exists=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Build release
+        if: steps.tag_check.outputs.exists == 'false'
+        run: cargo build --release
+
+      - name: Assemble zip
+        if: steps.tag_check.outputs.exists == 'false'
+        shell: pwsh
+        run: |
+          $dst = "dist/armafield-server"
+          New-Item -ItemType Directory -Path $dst -Force | Out-Null
+          Copy-Item target/release/armafield-server.exe $dst/
+          Copy-Item launcher.example.toml               $dst/
+          Copy-Item example_config.json                 $dst/
+          Copy-Item README.md                           $dst/
+          Copy-Item LICENSE                             $dst/
+          $tag = "${{ steps.ver.outputs.tag }}"
+          $zip = "dist/armafield-server-$tag-x86_64-windows.zip"
+          Compress-Archive -Path "$dst/*" -DestinationPath $zip -Force
+          Write-Host "Assembled $zip"
+
+      - name: Create tag and release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:               ${{ steps.ver.outputs.tag }}
+          name:                   ${{ steps.ver.outputs.tag }}
+          files:                  dist/*.zip
+          generate_release_notes: true

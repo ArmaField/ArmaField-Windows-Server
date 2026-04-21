@@ -1,0 +1,25 @@
+# Build
+/target/
+/dist/
+
+# User-edited config
+/launcher.toml
+/config.json
+
+# Persistent state managed by the launcher
+/state/
+/logs/
+/profile/
+/workshop/
+/server/
+/steamcmd/
+
+# Editor / tooling
+.vscode/
+.idea/
+.claude/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
